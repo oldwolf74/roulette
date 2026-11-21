@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>가위바위보 룰렛</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    background: #f4f6f8;
+
+    font-family:
+        "Malgun Gothic",
+        Arial,
+        sans-serif;
+
+    color: #222;
+}
+
+.container {
+    width: 100%;
+    max-width: 750px;
+
+    padding: 20px;
+
+    text-align: center;
+}
+
+h1 {
+    margin: 0 0 10px;
+
+    font-size: clamp(
+        38px,
+        7vw,
+        64px
+    );
+}
+
+
+/* 결과 */
+#result {
+    min-height: 95px;
+
+    margin-bottom: 15px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    font-size: clamp(
+        48px,
+        10vw,
+        82px
+    );
+
+    font-weight: 900;
+}
+
+
+/* 룰렛 전체 영역 */
+.roulette-area {
+
+    position: relative;
+
+    width: min(
+        82vw,
+        520px
+    );
+
+    aspect-ratio: 1 / 1;
+
+    margin:
+        10px auto
+        40px;
+}
+
+
+/* 위쪽 포인터 */
+.pointer {
+
+    position: absolute;
+
+    z-index: 20;
+
+    left: 50%;
+    top: -10px;
+
+    transform:
+        translateX(-50%);
+
+    width: 0;
+    height: 0;
+
+    border-left:
+        28px solid transparent;
+
+    border-right:
+        28px solid transparent;
+
+    border-top:
+        60px solid #222;
+}
+
+
+/* 원판 */
+#wheel {
+
+    position: absolute;
+
+    inset: 0;
+
+    border-radius: 50%;
+
+    overflow: hidden;
+
+    border:
+        10px solid #222;
+
+    /*
+       정확히 120도씩 3등분
+
+       가위 : 위쪽
+       바위 : 오른쪽 아래
+       보   : 왼쪽 아래
+    */
+
+    background:
+
+        conic-gradient(
+            from -60deg,
+
+            #ffd43b
+            0deg 120deg,
+
+            #74c0fc
+            120deg 240deg,
+
+            #ff8787
+            240deg 360deg
+        );
+
+    box-shadow:
+        0 12px 30px
+        rgba(0,0,0,0.22);
+
+    transition:
+
+        transform
+        4.5s
+        cubic-bezier(
+            0.12,
+            0.72,
+            0.18,
+            1
+        );
+}
+
+
+/*
+   가운데 축
+*/
+.center-circle {
+
+    position: absolute;
+
+    z-index: 10;
+
+    left: 50%;
+    top: 50%;
+
+    transform:
+        translate(
+            -50%,
+            -50%
+        );
+
+    width: 62px;
+    height: 62px;
+
+    border-radius: 50%;
+
+    background: white;
+
+    border:
+        7px solid #222;
+}
+
+
+/*
+   가위 / 바위 / 보
+
+   핵심 부분입니다.
+
+   세 항목 모두
+   원의 정확한 중심에서 시작한 뒤
+
+   0도
+   120도
+   240도
+
+   방향으로 동일한 거리만큼 이동합니다.
+*/
+
+.item {
+
+    position: absolute;
+
+    left: 50%;
+    top: 50%;
+
+    width: 150px;
+    height: 110px;
+
+    margin-left: -75px;
+    margin-top: -55px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+    align-items: center;
+
+    font-weight: 900;
+
+    line-height: 1.05;
+
+    color: #111;
+
+    pointer-events: none;
+}
+
+
+/* 아이콘 */
+.emoji {
+
+    font-size:
+        clamp(
+            44px,
+            8vw,
+            68px
+        );
+}
+
+
+/* 글씨 */
+.word {
+
+    margin-top: 5px;
+
+    font-size:
+        clamp(
+            30px,
+            6vw,
+            46px
+        );
+}
+
+
+/*
+   원 중심에서 약 30% 떨어진 곳으로 이동
+
+   rotate →
+   translateY →
+   반대로 rotate
+
+   방식이라 정확히 120도 간격이 됩니다.
+*/
+
+
+/* 가위 : 위쪽 중앙 */
+.scissors {
+
+    transform:
+
+        rotate(0deg)
+
+        translateY(-145%)
+
+        rotate(0deg);
+}
+
+
+/* 바위 : 오른쪽 아래 중앙 */
+.rock {
+
+    transform:
+
+        rotate(120deg)
+
+        translateY(-145%)
+
+        rotate(-120deg);
+}
+
+
+/* 보 : 왼쪽 아래 중앙 */
+.paper {
+
+    transform:
+
+        rotate(240deg)
+
+        translateY(-145%)
+
+        rotate(-240deg);
+}
+
+
+
+/* 버튼 영역 */
+.buttons {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 16px;
+}
+
+
+button {
+
+    width:
+        min(
+            92%,
+            520px
+        );
+
+    min-height: 92px;
+
+    border: none;
+
+    border-radius: 22px;
+
+    font-size:
+        clamp(
+            34px,
+            7vw,
+            50px
+        );
+
+    font-weight: 900;
+
+    cursor: pointer;
+
+    touch-action:
+        manipulation;
+}
+
+
+button:active {
+
+    transform:
+        scale(0.97);
+}
+
+
+#spinButton {
+
+    background:
+        #2f9e44;
+
+    color: white;
+}
+
+
+#resetButton {
+
+    background:
+        #343a40;
+
+    color: white;
+
+    display: none;
+}
+
+
+button:disabled {
+
+    opacity: 0.6;
+
+    cursor:
+        not-allowed;
+}
+
+
+/* 안내 문구 */
+.guide {
+
+    margin-top: 20px;
+
+    font-size:
+        clamp(
+            20px,
+            4vw,
+            27px
+        );
+
+    color: #555;
+}
+
+
+
+/* 작은 화면 */
+@media
+(max-width: 520px) {
+
+    .container {
+        padding: 12px;
+    }
+
+    .roulette-area {
+        width: 88vw;
+    }
+
+    .item {
+
+        width: 120px;
+        height: 95px;
+
+        margin-left: -60px;
+        margin-top: -47px;
+    }
+
+    .scissors,
+    .rock,
+    .paper {
+
+        /*
+           작은 화면에서는
+           약간 안쪽으로 이동
+        */
+
+        --distance:
+            -135%;
+    }
+
+    button {
+        min-height: 82px;
+    }
+}
+
+</style>
+</head>
+
+
+<body>
+
+<main class="container">
+
+    <h1>
+        가위바위보 룰렛
+    </h1>
+
+
+    <div id="result">
+        돌려보세요!
+    </div>
+
+
+
+    <div class="roulette-area">
+
+        <!-- 포인터 -->
+        <div class="pointer">
+        </div>
+
+
+        <!-- 원판 -->
+        <div id="wheel">
+
+
+            <!-- 가위 -->
+            <div
+                class="
+                    item
+                    scissors
+                "
+            >
+
+                <div class="emoji">
+                    ✌️
+                </div>
+
+                <div class="word">
+                    가위
+                </div>
+
+            </div>
+
+
+
+            <!-- 바위 -->
+            <div
+                class="
+                    item
+                    rock
+                "
+            >
+
+                <div class="emoji">
+                    ✊
+                </div>
+
+                <div class="word">
+                    바위
+                </div>
+
+            </div>
+
+
+
+            <!-- 보 -->
+            <div
+                class="
+                    item
+                    paper
+                "
+            >
+
+                <div class="emoji">
+                    ✋
+                </div>
+
+                <div class="word">
+                    보
+                </div>
+
+            </div>
+
+
+
+            <!-- 가운데 축 -->
+            <div
+                class="
+                    center-circle
+                "
+            >
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="buttons">
+
+
+        <button
+            id="spinButton"
+        >
+            🎯 돌리기
+        </button>
+
+
+        <button
+            id="resetButton"
+        >
+            🔄 다시 돌리기
+        </button>
+
+
+    </div>
+
+
+    <div class="guide">
+        버튼을 누르면 원판이 돌아갑니다.
+    </div>
+
+
+</main>
+
+
+
+<script>
+
+/*
+    HTML 요소
+*/
+
+const wheel =
+    document.getElementById(
+        "wheel"
+    );
+
+const spinButton =
+    document.getElementById(
+        "spinButton"
+    );
+
+const resetButton =
+    document.getElementById(
+        "resetButton"
+    );
+
+const result =
+    document.getElementById(
+        "result"
+    );
+
+
+
+let currentRotation = 0;
+
+let spinning = false;
+
+
+/*
+    원판의 초기 위치
+
+             가위
+              ↑
+
+       보           바위
+
+
+    위쪽 포인터가
+    각 영역의 중앙을 가리키게 합니다.
+*/
+
+const choices = [
+
+    {
+        name: "가위",
+        emoji: "✌️",
+
+        /*
+          이미 위쪽에 있으므로
+          0도
+        */
+        targetAngle: 0
+    },
+
+
+    {
+        name: "바위",
+        emoji: "✊",
+
+        /*
+          바위는 오른쪽 아래에 있으므로
+          240도 회전하면 위쪽으로 이동
+        */
+        targetAngle: 240
+    },
+
+
+    {
+        name: "보",
+        emoji: "✋",
+
+        /*
+          보는 왼쪽 아래에 있으므로
+          120도 회전하면 위쪽으로 이동
+        */
+        targetAngle: 120
+    }
+
+];
+
+
+
+function spinWheel() {
+
+
+    if (spinning) {
+        return;
+    }
+
+
+    spinning = true;
+
+
+    spinButton.disabled = true;
+
+    resetButton.disabled = true;
+
+
+    result.textContent =
+        "돌아가는 중...";
+
+
+
+    /*
+       가위 / 바위 / 보
+       무작위 선택
+    */
+
+    const randomIndex =
+
+        Math.floor(
+
+            Math.random()
+            *
+            choices.length
+
+        );
+
+
+    const selected =
+        choices[randomIndex];
+
+
+
+    /*
+       6 ~ 9바퀴
+    */
+
+    const extraTurns =
+
+        6
+        +
+        Math.floor(
+            Math.random() * 4
+        );
+
+
+
+    /*
+       현재 원판 각도
+    */
+
+    const normalized =
+
+        (
+            currentRotation
+            %
+            360
+            +
+            360
+        )
+        %
+        360;
+
+
+
+    /*
+       선택된 영역의 중앙을
+       포인터 위치까지 이동
+    */
+
+    const adjustment =
+
+        (
+            selected.targetAngle
+            -
+            normalized
+            +
+            360
+        )
+        %
+        360;
+
+
+
+    /*
+       여러 바퀴 돌고
+       정확한 위치에서 멈춤
+    */
+
+    currentRotation +=
+
+        extraTurns * 360
+        +
+        adjustment;
+
+
+
+    wheel.style.transform =
+
+        `rotate(
+            ${currentRotation}deg
+        )`;
+
+
+
+    /*
+       회전 종료
+    */
+
+    setTimeout(
+        function() {
+
+
+            result.innerHTML =
+
+                selected.emoji
+                +
+                " "
+                +
+                selected.name
+                +
+                "!";
+
+
+            spinButton.style.display =
+                "none";
+
+
+            resetButton.style.display =
+                "block";
+
+
+            resetButton.disabled =
+                false;
+
+
+            spinning =
+                false;
+
+
+        },
+
+        4600
+    );
+
+}
+
+
+
+/*
+    첫 번째 돌리기
+*/
+
+spinButton.addEventListener(
+
+    "click",
+
+    spinWheel
+
+);
+
+
+
+/*
+    다시 돌리기
+
+    원판을 처음으로 되돌리지 않고
+    현재 위치에서 다시 돌립니다.
+*/
+
+resetButton.addEventListener(
+
+    "click",
+
+    spinWheel
+
+);
+
+</script>
+
+
+</body>
+</html>
